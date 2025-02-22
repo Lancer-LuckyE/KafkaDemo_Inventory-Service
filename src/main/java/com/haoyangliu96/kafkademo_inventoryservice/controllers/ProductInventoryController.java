@@ -1,9 +1,9 @@
 package com.haoyangliu96.kafkademo_inventoryservice.controllers;
 
-import com.haoyangliu96.kafkademo_inventoryservice.dto.ProductDTO;
-import com.haoyangliu96.kafkademo_inventoryservice.exceptions.NotFoundException;
+import com.haoyangliu96.kafkademo.dtos.inventory.ProductDTO;
+import com.haoyangliu96.kafkademo.exceptions.NotFoundException;
 import com.haoyangliu96.kafkademo_inventoryservice.models.Product;
-import com.haoyangliu96.kafkademo_inventoryservice.services.ProductService;
+import com.haoyangliu96.kafkademo_inventoryservice.services.ProductInventoryService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -13,18 +13,18 @@ import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/v1/products")
-public class ProductController {
+public class ProductInventoryController {
 
-    private final ProductService productService;
+    private final ProductInventoryService productInventoryService;
 
-    public ProductController(ProductService productService) {
-        this.productService = productService;
+    public ProductInventoryController(ProductInventoryService productInventoryService) {
+        this.productInventoryService = productInventoryService;
     }
 
     @GetMapping
     public ResponseEntity<List<ProductDTO>> getProducts() {
         // get products
-        List<Product> products = productService.getAllProducts();
+        List<Product> products = productInventoryService.getAllProducts();
         List<ProductDTO> productsToReturn = products.stream().map(product -> ProductDTO.builder()
                 .productId(product.getId().toString())
                 .name(product.getName())
@@ -37,7 +37,7 @@ public class ProductController {
     @GetMapping("/{id}")
     public ResponseEntity<ProductDTO> getProduct(@PathVariable UUID id) {
         // get product by id
-        Product product = productService.getProductById(id);
+        Product product = productInventoryService.getProductById(id);
 
         ProductDTO productToReturn = ProductDTO.builder()
                 .productId(product.getId().toString())
@@ -59,7 +59,7 @@ public class ProductController {
                 .stock(productDTO.getStock())
                 .build()).toList();
         // save products
-        productService.saveAllProducts(productsToSave);
+        productInventoryService.saveAllProducts(productsToSave);
         return new ResponseEntity<>(HttpStatus.CREATED);
     }
 
