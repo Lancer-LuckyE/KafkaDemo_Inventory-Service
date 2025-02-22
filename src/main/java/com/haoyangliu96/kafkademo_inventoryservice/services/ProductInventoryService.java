@@ -26,11 +26,13 @@ public class ProductInventoryService {
     private final ProductRepository productRepository;
     private final ObjectMapper objectMapper;
     private final KafkaTemplate<String, String> kafkaTemplate;
+    private final InventoryRedisService inventoryRedisService;
 
-    public ProductInventoryService(ProductRepository productRepository, KafkaTemplate<String, String> kafkaTemplate) {
+    public ProductInventoryService(ProductRepository productRepository, KafkaTemplate<String, String> kafkaTemplate, InventoryRedisService inventoryRedisService) {
         this.productRepository = productRepository;
         this.objectMapper = new ObjectMapper();
         this.kafkaTemplate = kafkaTemplate;
+        this.inventoryRedisService = inventoryRedisService;
     }
 
     public Product saveProduct(Product product) {
@@ -46,12 +48,21 @@ public class ProductInventoryService {
 
     public Product getProductById(UUID productId) {
         // get product by id
-        return productRepository.findById(productId).orElseThrow(() -> new NotFoundException("Product with id " + productId + " not found"));
+        Product product = inventoryRedisService.getInventory(productId);
+        if (product == null) {
+            product = productRepository.findById(productId).orElseThrow(() -> new NotFoundException("Product with id " + productId + " not found"));
+            inventoryRedisService.setInventory(productId, product);
+        } else {
+            logger.info("Retrieved product from cache: " + product);
+        }
+        return product;
     }
 
     public List<Product> getAllProducts() {
         // get all products
-        return productRepository.findAll();
+        List<Product> allProducts = productRepository.findAll();
+        allProducts.forEach(product -> inventoryRedisService.setInventory(product.getId(), product));
+        return allProducts;
     }
 
     @KafkaListener(topics = "orders", groupId = "inventory-group")
