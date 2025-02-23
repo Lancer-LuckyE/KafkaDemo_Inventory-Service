@@ -7,7 +7,7 @@ import com.haoyangliu96.kafkademo.events.AbstractOrderEvent;
 import com.haoyangliu96.kafkademo.events.OrderCreatedEvent;
 import com.haoyangliu96.kafkademo.exceptions.KafkaEventException;
 import com.haoyangliu96.kafkademo.exceptions.NotFoundException;
-import com.haoyangliu96.kafkademo_inventoryservice.models.Product;
+import com.haoyangliu96.kafkademo.entities.inventoryservice.Product;
 import com.haoyangliu96.kafkademo_inventoryservice.repositories.ProductRepository;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.springframework.kafka.annotation.KafkaListener;

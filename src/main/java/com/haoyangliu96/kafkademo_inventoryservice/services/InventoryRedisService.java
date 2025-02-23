@@ -1,6 +1,6 @@
 package com.haoyangliu96.kafkademo_inventoryservice.services;
 
-import com.haoyangliu96.kafkademo_inventoryservice.models.Product;
+import com.haoyangliu96.kafkademo.entities.inventoryservice.Product;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 

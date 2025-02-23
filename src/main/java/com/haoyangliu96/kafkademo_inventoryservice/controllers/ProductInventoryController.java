@@ -2,7 +2,7 @@ package com.haoyangliu96.kafkademo_inventoryservice.controllers;
 
 import com.haoyangliu96.kafkademo.dtos.inventory.ProductDTO;
 import com.haoyangliu96.kafkademo.exceptions.NotFoundException;
-import com.haoyangliu96.kafkademo_inventoryservice.models.Product;
+import com.haoyangliu96.kafkademo.entities.inventoryservice.Product;
 import com.haoyangliu96.kafkademo_inventoryservice.services.ProductInventoryService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;

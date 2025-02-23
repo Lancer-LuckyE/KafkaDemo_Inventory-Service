@@ -2,7 +2,7 @@ package com.haoyangliu96.kafkademo_inventoryservice.configurations;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
-import com.haoyangliu96.kafkademo_inventoryservice.models.Product;
+import com.haoyangliu96.kafkademo.entities.inventoryservice.Product;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.data.redis.connection.RedisConnectionFactory;
