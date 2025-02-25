@@ -5,6 +5,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.haoyangliu96.kafkademo.dtos.order.OrderItemsDTO;
 import com.haoyangliu96.kafkademo.events.AbstractOrderEvent;
 import com.haoyangliu96.kafkademo.events.OrderCreatedEvent;
+import com.haoyangliu96.kafkademo.events.OrderOutOfStockEvent;
+import com.haoyangliu96.kafkademo.events.OrderReadyForPaymentEvent;
 import com.haoyangliu96.kafkademo.exceptions.KafkaEventException;
 import com.haoyangliu96.kafkademo.exceptions.NotFoundException;
 import com.haoyangliu96.kafkademo.entities.inventoryservice.Product;
@@ -38,7 +40,10 @@ public class ProductInventoryService {
     public Product saveProduct(Product product) {
         // save product
         logger.info("Saving product: " + product);
-        return productRepository.save(product);
+        inventoryRedisService.removeInventory(product.getId());
+        Product savedProduct = productRepository.save(product);
+        inventoryRedisService.setInventory(savedProduct.getId(), savedProduct);
+        return savedProduct;
     }
 
     public void saveAllProducts(List<Product> products) {
@@ -61,7 +66,6 @@ public class ProductInventoryService {
     public List<Product> getAllProducts() {
         // get all products
         List<Product> allProducts = productRepository.findAll();
-        allProducts.forEach(product -> inventoryRedisService.setInventory(product.getId(), product));
         return allProducts;
     }
 
@@ -80,21 +84,38 @@ public class ProductInventoryService {
             }
             ack.acknowledge();
         } catch (JsonProcessingException e) {
-            String message = String.format("Failed to parse event [%s]: %s", eventJson,e.getMessage());
+            String message = String.format("Failed to parse event [%s]: %s", eventJson, e.getMessage());
             throw new KafkaEventException(message);
         }
     }
 
     private void handleOrderCreatedEvent(OrderCreatedEvent orderCreatedEvent) {
         List<OrderItemsDTO> orderItems = orderCreatedEvent.getItemIds();
-        logger.info("Received order created event for order: " + orderCreatedEvent.getOrderId() + " with items: " + orderItems);
+        UUID orderId = orderCreatedEvent.getOrderId();
+        logger.info("Received order created event for order: " + orderId + " with items: " + orderItems);
         // check stock
         if (checkStockForEachItem(orderItems)) {
             // send order waiting for payment event
-            kafkaTemplate.send("inventory", orderCreatedEvent.getOrderId().toString(), "INVENTORY_CONFIRMED_EVENT"); //TODO: create inventory confirmed event
+            sendReadyForPaymentEvent(orderId);
         } else {
             // send out of stock event
-            kafkaTemplate.send("inventory", orderCreatedEvent.getOrderId().toString(), "OUT_OF_STOCK_EVENT"); //TODO: create out of stock event
+            sendOutOfStockEvent(orderId);
+        }
+    }
+
+    private void sendReadyForPaymentEvent(UUID orderId) {
+        try {
+            kafkaTemplate.send("inventory", orderId.toString(), objectMapper.writeValueAsString(new OrderReadyForPaymentEvent(orderId)));
+        } catch (JsonProcessingException e) {
+            throw new KafkaEventException("Failed to construct ready for payment event for order: " + orderId);
+        }
+    }
+
+    private void sendOutOfStockEvent(UUID orderId) {
+        try {
+            kafkaTemplate.send("inventory", orderId.toString(), objectMapper.writeValueAsString(new OrderOutOfStockEvent(orderId)));
+        } catch (JsonProcessingException e) {
+            throw new KafkaEventException("Failed to construct out of stock event for order: " + orderId);
         }
     }
 
